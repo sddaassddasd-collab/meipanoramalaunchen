@@ -19,8 +19,12 @@
     z-index:20;
     pointer-events:none;
   }
+  /* 預設隱藏人像容器 */
+  .hidden{ display:none; }
+
   #body {
     max-width:160px; /* 身體大小 */
+    display:none;    /* 尚未選擇前不顯示 */
   }
   #head {
     position:absolute;
@@ -28,6 +32,7 @@
     left:50%;
     transform:translateX(-50%);
     max-width:120px; /* 頭大小 */
+    display:none;    /* 尚未選擇前不顯示 */
   }
 
   /* 右側國旗（會被合成） */
@@ -87,10 +92,11 @@
 
   <div id="panorama"></div>
 
-  <!-- 人物 -->
-  <div class="character" id="character">
-    <img id="body" src="./images/body1.png" alt="body">
-    <img id="head" src="./images/head1.png" alt="head">
+  <!-- 人物（預設不顯示） -->
+  <div class="character hidden" id="character">
+    <!-- 起始不設定 src；選擇面板後才指定並顯示 -->
+    <img id="body" alt="body">
+    <img id="head" alt="head">
   </div>
 
   <!-- 國旗 -->
@@ -197,6 +203,7 @@
     const headEl = document.getElementById('head');
     const bodyEl = document.getElementById('body');
     const flagImgEl = document.getElementById('flagImg');
+    const characterEl = document.getElementById('character');
 
     const headBox = document.getElementById('headOptions');
     const bodyBox = document.getElementById('bodyOptions');
@@ -235,11 +242,20 @@
       downloadBtn.removeAttribute('href');
     }
 
-    function renderImageOptions(box, items, targetEl){
+    // 顯示人像容器（在任一部件選擇後觸發）
+    function revealCharacter(){
+      characterEl.classList.remove('hidden');
+    }
+
+    function renderImageOptions(box, items, targetEl, type){
       items.forEach((src, idx)=>{
         const btn = document.createElement('button');
         btn.textContent = idx+1;
-        btn.addEventListener('click', ()=>{ targetEl.src = src; });
+        btn.addEventListener('click', ()=>{
+          targetEl.src = src;
+          targetEl.style.display = 'block'; // 顯示該部件
+          revealCharacter();               // 顯示整個人像容器
+        });
         box.appendChild(btn);
       });
     }
@@ -251,8 +267,8 @@
         box.appendChild(btn);
       });
     }
-    renderImageOptions(headBox, headImages, headEl);
-    renderImageOptions(bodyBox, bodyImages, bodyEl);
+    renderImageOptions(headBox, headImages, headEl, 'head');
+    renderImageOptions(bodyBox, bodyImages, bodyEl, 'body');
     renderFlagOptions(flagBox, flagEmojis, flagPngs, flagImgEl);
 
     toggleBtn.addEventListener('click', ()=>{
@@ -298,7 +314,7 @@
       const dpr = window.devicePixelRatio || 1;
       const panoRect = panoEl.getBoundingClientRect();
       function drawImgAtElement(imgEl){
-        if (!imgEl.complete) return;
+        if (!imgEl || !imgEl.complete || !imgEl.src) return;
         const rEl = imgEl.getBoundingClientRect();
         const x = (rEl.left - panoRect.left) * dpr;
         const y = (rEl.top  - panoRect.top)  * dpr;
@@ -307,6 +323,7 @@
         if (w>0 && h>0) ctx.drawImage(imgEl, x, y, w, h);
       }
 
+      // 只有在有被選擇的情況下才會繪製
       drawImgAtElement(bodyEl);
       drawImgAtElement(headEl);
       drawImgAtElement(flagImgEl);
